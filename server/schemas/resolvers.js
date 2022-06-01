@@ -8,16 +8,24 @@ const { AuthenticationError } = require('apollo-server-express');
 const resolvers = { 
 // get a single user by either their id or their username
     Query: {
-        user: async (parent, { username, email }) => {
-        return User.findOne({ $or: [{ username}, { email }] });
-          }
+        me: async (parent, args, context) => {
+          if(context.user) {
+            const userData = await User.findOne({})
+            .select('-__v -password')
+            .populate('books')
+        
+            return userData;
+        }
+
+        throw new AuthenticationError('Not logged in')
+      }
     },
     Mutation: {
   // create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
-        createUser: async (parent, { username, email, password }) => {
-            const user = await User.create({ username, email, password });
+        addUser: async (parent, args) => {
+            const user = await User.create(args);
             const token = signToken(user);
-            return { token, profile };
+            return { token, user };
         }
     },
   // login a user, sign a token, and send it back (to client/src/components/LoginForm.js)
@@ -39,30 +47,32 @@ const resolvers = {
           },
   // save a book to a user's `savedBooks` field by adding it to the set (to prevent duplicates)
   // user comes from `req.user` created in the auth middleware function
-        saveBook: async (parent, { bookId, savedBooks }, context) => {
+        saveBook: async (parent, args, context) => {
             console.log(user);
      // If context has a `user` property, that means the user executing this mutation has a valid JWT and is logged in
             if (context.user) {
-                return User.findOneAndUpdate(
-                    { _id: bookId}, 
-                    { 
-                        $addtoSet: {savedBooks: book} },
+              const updatedUser = await User.findOneAndUpdate(
+                    { _id: context.user._id }, 
+                    { $addtoSet: {savedBooks: args.input } },
                     { 
                         new: true, 
                         runValidators: true,
                     }
                 );
+              return updatedUser;
             }
             // If user attempts to execute this mutation and isn't logged in, throw an error
             throw new AuthenticationError('You need to be logged in!');
     },
-        deleteBook: async (parent, { user,savedBooks }, context) => {
+        deleteBook: async (parent, args, context) => {
             if (context.user) {
-              return User.findOneAndUpdate(
+            const updatedUser = await User.findOneAndUpdate(
                 { _id: context.user._id },
-                { $pull: { saveBooks: book } },
+                { $pull: { saveBooks: { bookId: args.bookId } } },
                 { new: true }
               );
+
+              return updatedUser;
             }
             throw new AuthenticationError('You need to be logged in!');
           },
