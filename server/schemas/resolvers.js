@@ -8,9 +8,9 @@ const { AuthenticationError } = require('apollo-server-express');
 const resolvers = { 
 // get a single user by either their id or their username
     Query: {
-      user: async (parent, { user = null, params }) => {
-        return User.findOne({ $or: [{ _id: user ? user._id : params.id }, { username: params.username }], })
-    },
+         user: async (parent, { user = null, params }) => {
+            return User.findOne({ $or: [{ _id: user ? user._id : params.id }, { username: params.username }], })
+        },
     },
     Mutation: {
   // create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
@@ -18,8 +18,7 @@ const resolvers = {
             const user = await User.create({ username, email, password });
             const token = signToken(user);
             return { token, user };
-        }
-    },
+        },
   // login a user, sign a token, and send it back (to client/src/components/LoginForm.js)
   // {body} is destructured req.body
         login: async (parent, { email, password }) => {
@@ -68,6 +67,7 @@ const resolvers = {
             }
             throw new AuthenticationError('You need to be logged in!');
           },
+        },
 };
 module.exports = resolvers;
 
