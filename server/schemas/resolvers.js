@@ -8,7 +8,7 @@ const { AuthenticationError } = require('apollo-server-express');
 const resolvers = { 
 // get a single user by either their id or their username
     Query: {
-         user: async (parent, { user = null, params }) => {
+         me: async (parent, { user = null, params }) => {
             return User.findOne({ $or: [{ _id: user ? user._id : params.id }, { username: params.username }], })
         },
     },
