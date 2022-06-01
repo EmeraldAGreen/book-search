@@ -8,22 +8,14 @@ const { AuthenticationError } = require('apollo-server-express');
 const resolvers = { 
 // get a single user by either their id or their username
     Query: {
-        me: async (parent, args, context) => {
-          if(context.user) {
-            const userData = await User.findOne({})
-            .select('-__v -password')
-            .populate('books')
-        
-            return userData;
-        }
-
-        throw new AuthenticationError('Not logged in')
-      }
+      user: async (parent, { user = null, params }) => {
+        return User.findOne({ $or: [{ _id: user ? user._id : params.id }, { username: params.username }], })
+    },
     },
     Mutation: {
   // create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
-        addUser: async (parent, args) => {
-            const user = await User.create(args);
+        addUser: async (parent, { username, email, password }) => {
+            const user = await User.create({ username, email, password });
             const token = signToken(user);
             return { token, user };
         }
