@@ -68,7 +68,7 @@ export const REMOVE_BOOK = gql`
     bookId: $bookId
     image: $image
     link: $link
-    authors: [$authors]]) {
+    authors: [$authors]) {
       _id
       description
       title
